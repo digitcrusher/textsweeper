@@ -1,3 +1,8 @@
+/*
+board.h
+Textsweeper Source Code Available on Github
+Author: Karol "digitcrusher" Łacina 2017
+*/
 #pragma once
 #include "math.h"
 struct tile {

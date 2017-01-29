@@ -1,3 +1,8 @@
+/*
+board.cpp
+Textsweeper Source Code Available on Github
+Author: Karol "digitcrusher" Łacina 2017
+*/
 #include <iostream>
 #include "board.h"
 

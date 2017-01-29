@@ -1,3 +1,8 @@
+/*
+modules.cpp
+Textsweeper Source Code Available on Github
+Author: Karol "digitcrusher" Łacina 2017
+*/
 #include <stdlib.h>
 #include <string.h>
 #include "modules.h"

@@ -1,3 +1,8 @@
+/*
+utils.cpp
+Textsweeper Source Code Available on Github
+Author: Karol "digitcrusher" Łacina 2017
+*/
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

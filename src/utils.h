@@ -1,3 +1,8 @@
+/*
+utils.h
+Textsweeper Source Code Available on Github
+Author: Karol "digitcrusher" Łacina 2017
+*/
 #pragma once
 #if defined(WIN32) && defined(_WIN32) && defined(__WIN32)
 long getMS();
