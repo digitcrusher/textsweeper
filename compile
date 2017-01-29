@@ -1,0 +1,20 @@
+#!/bin/bash
+name="textsweeper"
+sd="src"
+bd="build"
+cc="g++"
+cppflags="-Wall -std=c++11 -ggdb -O0"
+libs="-L/usr/lib/X11R6/lib -lX11"
+rm -f $bd/$name $bd/main.o $bd/utils.o $bd/math.o $bd/board.o $bd/modules.o
+echo "main.cpp"
+$cc $cppflags $sd/main.cpp -c -o $bd/main.o
+echo "math.cpp"
+$cc $cppflags $sd/math.cpp -c -o $bd/math.o
+echo "utils.cpp"
+$cc $cppflags $sd/utils.cpp -c -o $bd/utils.o
+echo "board.cpp"
+$cc $cppflags $sd/board.cpp -c -o $bd/board.o
+echo "modules.cpp"
+$cc $cppflags $sd/modules.cpp -c -o $bd/modules.o
+echo $name
+$cc $bd/main.o $bd/utils.o $bd/math.o $bd/board.o $bd/modules.o $libs -o $bd/$name
