@@ -7,7 +7,7 @@ Author: Karol "digitcrusher" Łacina 2017
 
 struct operation {
     char* name;
-    void (*func)(void);
+    void (*func)();
 };
 struct module {
     char* name;
