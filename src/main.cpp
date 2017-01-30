@@ -24,7 +24,6 @@ int x=0,y=0;
 int fx=5,fy=11;
 int offsetx=0,offsety=9;
 int margintop=1,marginleft=1;
-int wid
 bool curcycle=1;
 void redraw() {
     for(unsigned int i=0;i<strlen(buff);i++) {
@@ -58,8 +57,8 @@ void x11f() {
     XSetStandardProperties(d, w, "Console", "Console", None, NULL, 0, NULL);
     XSelectInput(d, w, ExposureMask | ButtonPressMask | KeyPressMask);
     gc = XCreateGC(d, w, 0, 0);
-	XSetBackground(d, gc, BlackPixel(d, s));
-	XSetForeground(d, gc, WhitePixel(d, s));
+    XSetBackground(d, gc, BlackPixel(d, s));
+    XSetForeground(d, gc, WhitePixel(d, s));
     XClearWindow(d, w);
     XMapWindow(d, w);
     
@@ -76,7 +75,7 @@ void x11f() {
         }
     }
     XFreeGC(d, gc);
-	XDestroyWindow(d, w);
+    XDestroyWindow(d, w);
     XCloseDisplay(d);
     exit(0);
 }
@@ -137,14 +136,10 @@ int* getFlagsf() {
 }
 int mainf(int argc, char** argv) {
     options = *createModule("options", NULL);
-    addOp(*createOperation("getFlags", (void (*)())getFlagsf)
-         ,getMod("main", modbrd));
-    addOp(*createOperation("getMines", (void (*)())getMinesf)
-         ,getMod("main", modbrd));
-    addOp(*createOperation("getBoard", (void (*)())getBoardf)
-         ,getMod("main", modbrd));
-    addOp(*createOperation("addOpt", (void (*)())addOptf)
-         ,getMod("main", modbrd));
+    addOp(*createOperation("getFlags", (void (*)())getFlagsf), getMod("main", modbrd));
+    addOp(*createOperation("getMines", (void (*)())getMinesf), getMod("main", modbrd));
+    addOp(*createOperation("getBoard", (void (*)())getBoardf), getMod("main", modbrd));
+    addOp(*createOperation("addOpt", (void (*)())addOptf), getMod("main", modbrd));
     ((bool (*)(operation))getOp("addOpt", getMod("main", modbrd))->func)(*createOperation("", (void (*)())secretf));
     ((bool (*)(operation))getOp("addOpt", getMod("main", modbrd))->func)(*createOperation("Flag", (void (*)())flagf));
     ((bool (*)(operation))getOp("addOpt", getMod("main", modbrd))->func)(*createOperation("Show", (void (*)())showf));
@@ -230,14 +225,9 @@ int mainf(int argc, char** argv) {
     return 0;
 }
 int main(int argc, char** argv) {
-    addMod(*createModule("X11", NULL)
-          ,modbrd);
-    addOp(*createOperation("init", (void (*)())x11f)
-         ,getMod("X11", modbrd));
-    addMod(*createModule("main", NULL)
-          ,modbrd);
-    addOp(*createOperation("main", (void (*)())mainf)
-         ,getMod("main", modbrd));
+    addMod(*createModule("main", NULL), modbrd);
+    addOp(*createOperation("main", (void (*)())mainf), getMod("main", modbrd));
+    //getOp("main", getMod("main", modbrd))->func=x11f;
     for(int i=0;i<modbrd->size;i++) {
         operation* op;
         if((op=getOp("init", getMod(i, modbrd)))) {
