@@ -17,26 +17,38 @@ operation* createOperation(const char* name, void (*func)()) {
     op->func = func;
     return op;
 }
+void deleteOperation(operation& op) {
+    free(op.name);
+}
 void deleteOperation(operation* op) {
-    free(op->name);
+    return deleteOperation(*op);
+}
+void addOp(operation op, module& mod) {
+    mod.opssize++;
+    mod.ops = (operation*)realloc((void*)mod.ops, sizeof(operation)*mod.opssize);
+    *(mod.ops+mod.opssize-1) = op;
 }
 void addOp(operation op, module* mod) {
-    mod->opssize++;
-    mod->ops = (operation*)realloc((void*)mod->ops, sizeof(operation)*mod->opssize);
-    *(mod->ops+mod->opssize-1) = op;
+    return addOp(op, *mod);
 }
-operation* getOp(int x, module* mod) {
-    if(x >= 0 && x<mod->opssize)
-        return mod->ops+x;
+operation* getOp(int x, module& mod) {
+    if(x >= 0 && x<mod.opssize)
+        return mod.ops+x;
     return NULL;
 }
-operation* getOp(const char* x, module* mod) {
-    for(int i=0;i >= 0 && i<mod->opssize;i++) {
-        if(!strcmp((mod->ops+i)->name, x)) {
-            return mod->ops+i;
+operation* getOp(int x, module* mod) {
+    return getOp(x, *mod);
+}
+operation* getOp(const char* x, module& mod) {
+    for(int i=0;i >= 0 && i<mod.opssize;i++) {
+        if(!strcmp((mod.ops+i)->name, x)) {
+            return mod.ops+i;
         }
     }
     return NULL;
+}
+operation* getOp(const char* x, module* mod) {
+    return getOp(x, *mod);
 }
 module* createModule(const char* name, void* data) {
     module* mod = (module*)malloc(sizeof(module));
@@ -48,28 +60,40 @@ module* createModule(const char* name, void* data) {
     mod->ops = (operation*)malloc(sizeof(operation)*mod->opssize);
     return mod;
 }
+void deleteModule(module& mod) {
+    free(mod.name);
+    free(mod.data);
+    free(mod.ops);
+}
 void deleteModule(module* mod) {
-    free(mod->name);
-    free(mod->data);
-    free(mod->ops);
+    return deleteModule(*mod);
+}
+void addMod(module mod, modboard& brd) {
+    brd.size++;
+    brd.array = (module*)realloc((void*)brd.array, sizeof(module)*brd.size);
+    *(brd.array+brd.size-1) = mod;
 }
 void addMod(module mod, modboard* brd) {
-    brd->size++;
-    brd->array = (module*)realloc((void*)brd->array, sizeof(module)*brd->size);
-    *(brd->array+brd->size-1) = mod;
+    return addMod(mod, *brd);
 }
-module* getMod(int x, modboard* brd) {
-    if(x >= 0 && x<brd->size)
-        return brd->array+x;
+module* getMod(int x, modboard& brd) {
+    if(x >= 0 && x<brd.size)
+        return brd.array+x;
     return NULL;
 }
-module* getMod(const char* x, modboard* brd) {
-    for(int i=0;i >= 0 && i<brd->size;i++) {
-        if(!strcmp((brd->array+i)->name, x)) {
-            return brd->array+i;
+module* getMod(int x, modboard* brd) {
+    return getMod(x, *brd);
+}
+module* getMod(const char* x, modboard& brd) {
+    for(int i=0;i >= 0 && i<brd.size;i++) {
+        if(!strcmp((brd.array+i)->name, x)) {
+            return brd.array+i;
         }
     }
     return NULL;
+}
+module* getMod(const char* x, modboard* brd) {
+    return getMod(x, *brd);
 }
 modboard* createModBoard() {
     modboard* brd = (modboard*)malloc(sizeof(modboard));
@@ -77,11 +101,17 @@ modboard* createModBoard() {
     brd->array = (module*)malloc(sizeof(module)*brd->size);
     return brd;
 }
+void deleteModBoard(modboard& brd) {
+    free(brd.array);
+}
 void deleteModBoard(modboard* brd) {
-    free(brd->array);
+    return deleteModBoard(*brd);
+}
+void resetModBoard(modboard& brd) {
+    brd.size = 0;
+    free(brd.array);
+    brd.array = (module*)malloc(sizeof(module)*brd.size);
 }
 void resetModBoard(modboard* brd) {
-    brd->size = 0;
-    free(brd->array);
-    brd->array = (module*)malloc(sizeof(module)*brd->size);
+    return resetModBoard(*brd);
 }
