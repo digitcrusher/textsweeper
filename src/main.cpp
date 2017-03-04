@@ -10,74 +10,16 @@ Author: Karol "digitcrusher" Łacina 2017
 #include <X11/Xos.h>
 #include "utils.h"
 #include "board.h"
-#include "modules.h"
+#include "module.h"
+#include "console.h"
 
 using namespace std;
 
-Display* d;
-Window w;
-GC gc;
-int s;
-bool loop=1;
-char* buff="12345678901234567890123456789012345678901234567890\nqwertyuiopasdfghjklzxcvbnm\nQWERTYUIOPASDFGHJKLZXCVBNM\n1234567890\nabcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPRSTUVWXYZ";
-int x=0,y=0;
-int fx=5,fy=11;
-int offsetx=0,offsety=9;
-int margintop=1,marginleft=1;
-bool curcycle=1;
-void redraw() {
-    for(unsigned int i=0;i<strlen(buff);i++) {
-        char* c=(char*)malloc(sizeof(char)*2);
-        memcpy(c,buff+i,1);
-        *(c+1)='\0';
-        switch(buff[i]) {
-            case '\n':
-                x=0;
-                y++;
-                break;
-            default:
-                XDrawString(d, w, gc, offsetx+(x+1)*marginleft+x*fx, offsety+(y+1)*margintop+y*fy, c, strlen(c));
-                x++;
-                break;
-        }
-    }
-    if(curcycle) {
-        XFillRectangle(d, w, gc, (x+1)*marginleft+x*fx, (y+1)*margintop+y*fy, fx, fy);
-    }
-    curcycle=!curcycle;
-}
-void x11f() {
-    d = XOpenDisplay(NULL);
-    if(d==NULL) {
-        cerr<<"Cannot open display\n";
-        exit(1);
-    }
-    s = DefaultScreen(d);
-    w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, (50+1)*marginleft+50*fx, (20+1)*margintop+50*fy, 1, WhitePixel(d, s), BlackPixel(d, s));
-    XSetStandardProperties(d, w, "Console", "Console", None, NULL, 0, NULL);
-    XSelectInput(d, w, ExposureMask | ButtonPressMask | KeyPressMask);
-    gc = XCreateGC(d, w, 0, 0);
-    XSetBackground(d, gc, BlackPixel(d, s));
-    XSetForeground(d, gc, WhitePixel(d, s));
-    XClearWindow(d, w);
-    XMapWindow(d, w);
-    
-    XEvent e;
-    while(loop) {
-        XNextEvent(d, &e);
-        switch(e.type) {
-            case Expose:
-                redraw();
-                break;
-            case KeyPress:
-                loop=0;
-                break;
-        }
-    }
-    XFreeGC(d, gc);
-    XDestroyWindow(d, w);
-    XCloseDisplay(d);
-    exit(0);
+console* stdcon;
+int x11f(int, char**) {
+    stdcon = createConsole(DEFAULT_BUFF_WIDTH, DEFAULT_BUFF_HEIGHT);
+    while(1) updateConsole(stdcon);
+    return 0;
 }
 
 int mines;
@@ -87,8 +29,8 @@ bool running=1;
 bool playing=1;
 bool win=0;
 module options;
-bool addOptf(operation opt) {
-    addOp(opt, &options);
+bool addOptf(routine opt) {
+    addRtn(opt, &options);
     return 0;
 }
 void flagf() {
@@ -136,13 +78,13 @@ int* getFlagsf() {
 }
 int mainf(int argc, char** argv) {
     options = *createModule("options", NULL);
-    addOp(*createOperation("getFlags", (void (*)())getFlagsf), getMod("main", modbrd));
-    addOp(*createOperation("getMines", (void (*)())getMinesf), getMod("main", modbrd));
-    addOp(*createOperation("getBoard", (void (*)())getBoardf), getMod("main", modbrd));
-    addOp(*createOperation("addOpt", (void (*)())addOptf), getMod("main", modbrd));
-    ((bool (*)(operation))getOp("addOpt", getMod("main", modbrd))->func)(*createOperation("", (void (*)())secretf));
-    ((bool (*)(operation))getOp("addOpt", getMod("main", modbrd))->func)(*createOperation("Flag", (void (*)())flagf));
-    ((bool (*)(operation))getOp("addOpt", getMod("main", modbrd))->func)(*createOperation("Show", (void (*)())showf));
+    addRtn(*createRoutine("getFlags", (void (*)())getFlagsf), getMod("main", modbrd));
+    addRtn(*createRoutine("getMines", (void (*)())getMinesf), getMod("main", modbrd));
+    addRtn(*createRoutine("getBoard", (void (*)())getBoardf), getMod("main", modbrd));
+    addRtn(*createRoutine("addOpt", (void (*)())addOptf), getMod("main", modbrd));
+    ((bool (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("", (void (*)())secretf));
+    ((bool (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Flag", (void (*)())flagf));
+    ((bool (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Show", (void (*)())showf));
     cout<<"TextSweeper C++ Edition 1.0 by digitcrusher\n";
     cout<<"Initializing board...\n";
     createBoard(&brd,9,9,{0,0,0,0,0,0});
@@ -175,19 +117,19 @@ int mainf(int argc, char** argv) {
             cout<<"You have "<<flags<<" flags.\n";
             while(1) {
                 int opt;
-                for(int i=0;i<options.opssize;i++) {
-                    if(*getOp(i, &options)->name!='\0') {
-                        cout<<i<<"-"<<getOp(i, &options)->name<<'\n';
+                for(int i=0;i<options.size;i++) {
+                    if(*getRtn(i, &options)->name!='\0') {
+                        cout<<i<<"-"<<getRtn(i, &options)->name<<'\n';
                     }
                 }
                 cout<<"Choose an option ";
                 cin>>opt;
-                operation* op;
-                if(!(op=getOp(opt, &options))){
+                routine* rtn;
+                if(!(rtn=getRtn(opt, &options))){
                     cout<<"Please enter a correct option.\n";
                     continue;
                 }
-                op->func();
+                rtn->func();
                 break;
             }
             bool clear=1;
@@ -224,15 +166,27 @@ int mainf(int argc, char** argv) {
     deleteBoard(&brd);
     return 0;
 }
+//Start point
 int main(int argc, char** argv) {
+    //Create module main and add it to the global modboard modbrd.
     addMod(*createModule("main", NULL), modbrd);
-    addOp(*createOperation("main", (void (*)())mainf), getMod("main", modbrd));
-    //getOp("main", getMod("main", modbrd))->func=x11f;
-    for(int i=0;i<modbrd->size;i++) {
-        operation* op;
-        if((op=getOp("init", getMod(i, modbrd)))) {
-            op->func();
+    //Create routine main pointing to casted mainf and add it to module main from modbrd.
+    addRtn(*createRoutine("main", (void (*)())mainf), getMod("main", modbrd));
+    //Get routine main from main and change it so it pointing to function x11f.
+    getRtn("main", getMod("main", modbrd))->func = (void (*)())x11f;
+    //Iterate over the modules from modbrd.
+    for(int i=0; i<modbrd->size; i++) {
+        routine* rtn;
+        //Rtn has init? If yes call it.
+        if((rtn = getRtn("init", getMod(i, modbrd)))) {
+            rtn->func();
         }
     }
-    return ((int (*)(int, char**))getOp("main", getMod("main", modbrd))->func)(argc, argv);
+    /*
+     * This is a big pile of casting and calling the main function, here i explain it:
+     * getRtn("main", getMod("main", modbrd))->func) Get function pointer from main which is from main.
+     * ((int (*)(int, char**)) Cast it to a function which returns int and accepts int and char** as arguments/
+     * (argc, argv) Call it with argc and argv
+     */
+    return ((int (*)(int, char**))getRtn("main", getMod("main", modbrd))->func)(argc, argv);
 }
