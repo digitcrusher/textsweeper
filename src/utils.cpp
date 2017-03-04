@@ -1,8 +1,23 @@
 /*
-utils.cpp
-Textsweeper Source Code Available on Github
-Author: Karol "digitcrusher" Łacina 2017
-*/
+ * utils.cpp
+ * Textsweeper Source Code
+ * Available on Github
+ *
+ * Copyright (C) 2017 Karol "digitcrusher" Łacina
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,7 +80,7 @@ long getMS() { //Get milliseconds
     LARGE_INTEGER f,c; //Union which will store frequency and ticks
     if(!QueryPerformanceFrequency(&f)) return 0; //Try to get processor clock frequency
     if(!QueryPerformanceCounter(&c)) return 0; //Try to get processor clock ticks
-    return c.QuadPart/(f.QuadPart/1000); //Return milliseconds ( Ticks/( Frequency/MSperSECOND ) )
+    return c.QuadPart/(f.QuadPart/1000); //Return milliseconds (Ticks / (Frequency / MSperSECOND))
 }
 void hidecursor() {
     HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -99,7 +114,7 @@ bool stof(char* str, float* to) {
     char* whole=(char*)malloc(sizeof(char)*len);
     int numofwhole=0;
     char* point=(char*)malloc(sizeof(char)*len);
-    int numoffloat=0;    
+    int numoffloat=0;
     for(int i=0;i<len;i++) {
         if(i==0 && *(str+i)=='-') {
             neg=1;
@@ -133,11 +148,11 @@ bool stof(char* str, float* to) {
     *to=num;
     return 0;
 }
-int intlen(int ntgr) {
-    int i=ntgr;
-    int lngth=1;
-    if (i>0) {
-        for (lngth=0; i>0; lngth++) {
+int intlen(int i) {
+    int i=i;
+    int len=1;
+    if(i>0) {
+        for(len=0; i>0; len++) {
             i = i/10;
         }
     }
@@ -167,7 +182,7 @@ char* itos(int input) {
     *(result+len) = '\0';
     return result;
 }
-int htod(char* hex) {
+int htoi(char* hex) {
     int dec=0;
     for(int i=strlen(hex); i>0; i--) {
         int num=0;
@@ -251,9 +266,10 @@ int htod(char* hex) {
     return dec;
 }
 int indexof(const char* string, char search) {
-    int i=0;
-    for(;i<(int)strlen(string);i++)
-        if(*(string+i)==search) break;
-    if(*(string+i)==search) return i;
-    else return -1;
+    for(int i=0; i<(int)strlen(string); i++) {
+        if(*(string+i) == search) {
+            return i;
+        }
+    }
+    return 1;
 }
