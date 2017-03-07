@@ -20,20 +20,22 @@
  */
 #include <iostream>
 #include <string.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xos.h>
 #include "utils.h"
 #include "board.h"
 #include "module.h"
-#include "console.h"
+#include "terminal.h"
 
 using namespace std;
 
-console* stdcon;
 int x11f(int, char**) {
-    stdcon = createConsole(DEFAULT_BUFF_WIDTH, DEFAULT_BUFF_HEIGHT);
-    while(1) updateConsole(stdcon);
+    flush(stdterm, TERMINAL_OUTPUT);
+    swrite(stdterm, "Hello, World!");
+    updateTerminal(stdterm);
+    flush(stdterm, TERMINAL_OUTPUT);
+    swrite(stdterm, "Haha!");
+    while(1) {
+        updateTerminal(stdterm);
+    }
     return 0;
 }
 
@@ -181,8 +183,12 @@ int mainf(int argc, char** argv) {
     deleteBoard(&brd);
     return 0;
 }
-//Start point
 int main(int argc, char** argv) {
+    //Inform the user that we use GPLv3
+    cout<<"textsweeper Copyright (C) 2017 Karol \"digitcrusher\" Łacina"<<'\n';
+    cout<<"This program comes with ABSOLUTELY NO WARRANTY."<<'\n';
+    cout<<"This is free software, and you are welcome to redistribute it"<<'\n';
+    cout<<"under certain conditions."<<'\n';
     //Create module main and add it to the global modboard modbrd.
     addMod(*createModule("main", NULL), modbrd);
     //Create routine main pointing to casted mainf and add it to module main from modbrd.
