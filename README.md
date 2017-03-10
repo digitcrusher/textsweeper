@@ -1,5 +1,3 @@
 # textsweeper
-Requires bash and g++ to compile.
-To compile run this script in your teminal:
-
-$ bash compile
+"check" runs perl to find and replace 4 whitespaces with a tab.
+Run "Makefile" to compile (linux version available only for now).
