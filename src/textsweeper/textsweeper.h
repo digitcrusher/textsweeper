@@ -1,5 +1,5 @@
 /*
- * math.h
+ * textsweeper.h
  * Textsweeper Source Code
  * Available on Github
  *
@@ -18,23 +18,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef MATH_H
-#define MATH_H
-#include <math.h>
+#ifndef TEXTSWEEPER_H
+#define TEXTSWEEPER_H
+#include <iostream>
+#include <src/utils.h>
+#include <src/module.h>
+#include <src/terminal.h>
+#include "board.h"
 
-struct V {
-    float x,y;
-};
-struct line {
-    float x1,y1,x2,y2;
-};
-struct square {
-    float x1,y1,x2,y2;
-};
-
-bool sqrInSqr(square sqr1, square sqr2);
-bool fpil(line line, V point); //float point in line
-bool fpilu(line line, V point, float unprec); //float point in line with unprecision
-float fatp(V p1, V p2); //float angle to point
+void init();
+int run(int argc, char** argv);
 
 #endif

@@ -20,20 +20,33 @@
  */
 #ifndef UTILS_H
 #define UTILS_H
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if defined(WIN32) && defined(_WIN32) && defined(__WIN32)
+#include <windows.h>
 long getMS();
 void hidecursor();
 #else
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
 int getch();
 #endif
 
-bool stof(char* str, float* to); //Convert str to a float
-int intlen(int i); //How digits in i?
-char* itos(int input, char* msg); //Convert int to string and concatenate msg to the end
-char* itos(int input); //Convert int to string
-int htoi(char* hex); //Convert hex string to int
 int indexof(const char* string, char search); //Search string for search
+size_t intlen(int x); //How many digits in x?
+size_t uintlen(unsigned int x); //How many digits in x?
+size_t floatlen(float x); //How many digits in x?
+bool stof(char* str, float* ret); //Convert str to a float
+bool stoi(char* str, int* ret); //Convert str to an int
+bool stoui(char* str, unsigned int* ret); //Convert str to an unsigned int
+char* itos(int x); //Convert int to string
+char* uitos(unsigned int x); //Convert unsigned int to string
+char* ftos(float x); //Convert float to string
+int htoi(char* hex); //Convert hex string to int
+//char* itos(int input, char* msg); //Convert int to string and concatenate msg to the end !!!!!NOT USED!!!!!
 
 template<typename T> class Vector {
     private:

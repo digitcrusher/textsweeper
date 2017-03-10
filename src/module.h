@@ -20,6 +20,8 @@
  */
 #ifndef MODULE_H
 #define MODULE_H
+#include <stdlib.h> //malloc, realloc
+#include <string.h> //strlen, strcpy, strcmp
 
 struct routine {
     char* name; //Name for the routine - useful for name searching.
@@ -60,6 +62,6 @@ void deleteModBoard(modboard* brd);
 void resetModBoard(modboard& brd);
 void resetModBoard(modboard* brd);
 
-static modboard* modbrd = createModBoard(); //Global modboard
+extern modboard* modbrd; //Global modboard
 
 #endif

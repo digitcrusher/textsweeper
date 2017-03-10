@@ -18,8 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <math.h>
-#include "math.h"
+#include <src/math.h>
 
 bool sqrInSqr(square sqr1, square sqr2) {
     return (sqr2.x1 >= sqr1.x1 && sqr2.x1 <= sqr1.x2 && sqr2.y1 >= sqr1.y1 && sqr2.y1 <= sqr1.y2) ||

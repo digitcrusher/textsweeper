@@ -18,10 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include "utils.h"
+#include <src/utils.h>
 
 template<class T> Vector<T>::Vector() {
     vsize=0;
@@ -75,7 +72,6 @@ template<class T> T Vector<T>::operator[](int n) {
 }
 
 #if defined(WIN32) && defined(_WIN32) && defined(__WIN32)
-#include <windows.h>
 long getMS() { //Get milliseconds
     LARGE_INTEGER f,c; //Union which will store frequency and ticks
     if(!QueryPerformanceFrequency(&f)) return 0; //Try to get processor clock frequency
@@ -90,9 +86,6 @@ void hidecursor() {
     SetConsoleCursorInfo(consoleHandle, &info);
 }
 #else
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
 int getch() {
   struct termios oldt, newt;
   int ch;
@@ -106,81 +99,205 @@ int getch() {
 }
 #endif
 
-bool stof(char* str, float* to) {
+int indexof(const char* string, char search) {
+    for(int i=0; i<(int)strlen(string); i++) {
+        if(*(string+i) == search) {
+            return i;
+        }
+    }
+    return 1;
+}
+size_t intlen(int x) {
+    int i=x;
+    size_t len=1;
+    if(i!=0) {
+        for(len = 0; i!=0; len++) {
+            i = i/10;
+        }
+    }
+    return len+(x<0);
+}
+size_t uintlen(unsigned int x) {
+    int i=x;
+    size_t len=1;
+    if(i!=0) {
+        for(len = 0; i!=0; len++) {
+            i = i/10;
+        }
+    }
+    return len;
+}
+size_t floatlen(float x) {
+    float i=x;
+    size_t len=1;
+    if((int)i!=0) {
+        for(len = 0; (int)i!=0; len++) {
+            i = i/10;
+        }
+    }
+    i = x;
+    if(i!=0) {
+        for(; (int)i!=i; len++) {
+            i = i*10;
+        }
+    }
+    return len+(x<0)+((int)x!=x);
+}
+bool stof(char* str, float* ret) {
     int len=strlen(str);
     bool neg=0;
     bool floatpoint=0;
     float num=0;
     char* whole=(char*)malloc(sizeof(char)*len);
-    int numofwhole=0;
+    int wholelen=0;
     char* point=(char*)malloc(sizeof(char)*len);
-    int numoffloat=0;
-    for(int i=0;i<len;i++) {
-        if(i==0 && *(str+i)=='-') {
-            neg=1;
-        }else if(*(str+i)=='.' && !floatpoint) {
-            floatpoint=1;
-        }else if(*(str+i)-'0'>=0 && *(str+i)-'0'<=9) {
+    int floatlen=0;
+    for(int i=0; i<len; i++) {
+        if(i == 0 && *(str+i) == '-') {
+            neg = 1;
+        }else if(*(str+i) == '.' && !floatpoint) {
+            floatpoint = 1;
+        }else if(*(str+i)-'0' >= 0 && *(str+i)-'0' <= 9) {
             if(floatpoint) {
-                *(point+numoffloat++)=*(str+i)-'0';
+                *(point+floatlen++) = *(str+i)-'0';
             }else {
-                *(whole+numofwhole++)=*(str+i)-'0';
+                *(whole+wholelen++) = *(str+i)-'0';
             }
         }else {
             return 1;
         }
     }
-    for(int i=0;i<numofwhole;i++) {
+    for(int i=0; i<wholelen; i++) {
         if(i>=1) {
-            num+=pow(10,i)**(whole+numofwhole-1-i);
+            num += pow(10,i)**(whole+wholelen-1-i);
         }else {
-            num+=*(whole+numofwhole-1-i);
+            num += *(whole+wholelen-1-i);
         }
     }
-    for(int i=0;i<numoffloat;i++) {
-        num+=*(point+i)/pow(10,i+1);
+    for(int i=0; i<floatlen; i++) {
+        num += *(point+i)/pow(10,i+1);
     }
     if(neg) {
-        num=-(num);
+        num = -(num);
     }
     free(whole);
     free(point);
-    *to=num;
+    *ret = num;
     return 0;
 }
-int intlen(int i) {
-    int i=i;
-    int len=1;
-    if(i>0) {
-        for(len=0; i>0; len++) {
-            i = i/10;
+bool stoi(char* str, int* ret) {
+    int len=strlen(str);
+    bool neg=0;
+    int num=0;
+    char* whole=(char*)malloc(sizeof(char)*len);
+    int wholelen=0;
+    for(int i=0; i<len; i++) {
+        if(i == 0 && *(str+i) == '-') {
+            neg = 1;
+        }else if(*(str+i)-'0' >= 0 && *(str+i)-'0' <= 9) {
+            *(whole+wholelen++) = *(str+i)-'0';
+        }else {
+            return 1;
         }
     }
-    return lngth;
-}
-char* itos(int input, char* msg) {
-    int len = intlen(input);
-    char* result = (char*)malloc(sizeof(char)*(len+strlen(msg)));
-    int sub = 0;
-    for(int i=0;i<len;i++) {
-        int current = floor((input-sub)/pow(10,(len-i-1)));
-        *(result+i) = current + '0';
-        sub += pow(10,(len-i-1))*current;
+    for(int i=0; i<wholelen; i++) {
+        if(i>0) {
+            num += pow(10,i)**(whole+wholelen-1-i);
+        }else {
+            num += *(whole+wholelen-1-i);
+        }
     }
-    strcpy(result+len, msg);
-    return result;
-}
-char* itos(int input) {
-    int len = intlen(input);
-    char* result = (char*)malloc(sizeof(char)*len+1);
-    int sub = 0;
-    for(int i=0;i<len;i++) {
-        int current = floor((input-sub)/pow(10,(len-i-1)));
-        *(result+i) = current + '0';
-        sub += pow(10,(len-i-1))*current;
+    if(neg) {
+        num = -(num);
     }
-    *(result+len) = '\0';
-    return result;
+    free(whole);
+    *ret = num;
+    return 0;
+}
+bool stoui(char* str, unsigned int* ret) {
+    int len=strlen(str);
+    unsigned int num=0;
+    char* whole=(char*)malloc(sizeof(char)*len);
+    int wholelen=0;
+    for(int i=0; i<len; i++) {
+        if(*(str+i)-'0' >= 0 && *(str+i)-'0' <= 9) {
+            *(whole+wholelen++) = *(str+i)-'0';
+        }else {
+            return 1;
+        }
+    }
+    for(int i=0; i<wholelen; i++) {
+        if(i>0) {
+            num += pow(10,i)**(whole+wholelen-1-i);
+        }else {
+            num += *(whole+wholelen-1-i);
+        }
+    }
+    free(whole);
+    *ret = num;
+    return 0;
+}
+char* itos(int x) {
+    int len=intlen(x);
+    char* str=(char*)malloc(sizeof(char)*(len+1));
+    int num=x;
+    bool neg=0;
+    int ptr=0;
+    if(x<0) {
+        neg = 1;
+        num = 0-x;
+        *(str+ptr++) = '-';
+    }
+    for(int i=0; i<len-neg; i++, ptr++) {
+        *(str+len-1-i) = num%10+'0';
+        num = num/10;
+    }
+    *(str+len) = '\0';
+    return str;
+}
+char* uitos(unsigned int x) {
+    int len=uintlen(x);
+    char* str=(char*)malloc(sizeof(char)*(len+1));
+    unsigned int num=x;
+    int ptr=0;
+    for(int i=0; i<len; i++, ptr++) {
+        *(str+len-1-i) = num%10+'0';
+        num = num/10;
+    }
+    *(str+len) = '\0';
+    return str;
+}
+char* ftos(float x) {
+    int len=floatlen(x);
+    char* str=(char*)malloc(sizeof(char)*(len+1));
+    float num=x;
+    bool neg=0;
+    bool exponent=0;
+    int ptr=0;
+    if(x<0) {
+        neg = 1;
+        num = 0-x;
+        *(str+ptr++) = '-';
+    }
+    if((int)x!=x) {
+        exponent = 1;
+    }
+    len = intlen((int)x);
+    for(int i=0; i<len-neg; i++, ptr++) {
+        *(str+len-1-i) = (int)num%10+'0';
+        num = num/10;
+    }
+    num = neg ? 0-x : x;
+    if(exponent) {
+        *(str+ptr++) = '.';
+        for(; (int)num!=num; ptr++) {
+            num = num*10;
+            *(str+ptr) = (int)num%10+'0';
+        }
+    }
+    len = floatlen(x);
+    *(str+len) = '\0';
+    return str;
 }
 int htoi(char* hex) {
     int dec=0;
@@ -265,11 +382,15 @@ int htoi(char* hex) {
     }
     return dec;
 }
-int indexof(const char* string, char search) {
-    for(int i=0; i<(int)strlen(string); i++) {
-        if(*(string+i) == search) {
-            return i;
-        }
+/*char* itos(int input, char* msg) {
+    int len = intlen(input);
+    char* result = (char*)malloc(sizeof(char)*(len+strlen(msg)));
+    int sub = 0;
+    for(int i=0;i<len;i++) {
+        int current = floor((input-sub)/pow(10,(len-i-1)));
+        *(result+i) = current + '0';
+        sub += pow(10,(len-i-1))*current;
     }
-    return 1;
-}
+    strcpy(result+len, msg);
+    return result;
+}*/

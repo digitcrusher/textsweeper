@@ -20,9 +20,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdlib.h> //malloc, realloc
-#include <string.h> //strlen, strcpy, strcmp
-#include "module.h"
+#include <src/module.h>
+
+modboard* modbrd = createModBoard();
 
 routine* createRoutine(const char* name, void (*func)()) {
     routine* rtn = (routine*)malloc(sizeof(routine)); //Allocate memory for rtn.

@@ -1,5 +1,5 @@
 /*
- * math.h
+ * board.h
  * Textsweeper Source Code
  * Available on Github
  *
@@ -18,23 +18,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef MATH_H
-#define MATH_H
-#include <math.h>
+#ifndef BOARD_H
+#define BOARD_H
+#include <src/terminal.h>
+#include <src/math.h>
 
-struct V {
-    float x,y;
+struct tile {
+    int sum;
+    bool show,showsum,mine,wrong,flagged;
 };
-struct line {
-    float x1,y1,x2,y2;
-};
-struct square {
-    float x1,y1,x2,y2;
+struct board {
+    V size;
+    tile* map;
+    tile* null;
 };
 
-bool sqrInSqr(square sqr1, square sqr2);
-bool fpil(line line, V point); //float point in line
-bool fpilu(line line, V point, float unprec); //float point in line with unprecision
-float fatp(V p1, V p2); //float angle to point
+extern V tocheck[];
+
+tile* getTile(int x, int y, board* brd);
+void createBoard(board* brd, int w, int h, tile null);
+void deleteBoard(board* brd);
+void resetBoard(board* brd, tile with);
+void printBoard(board* brd);
+void generateBoard(board* brd, int mines);
+void putMines(board* brd, int mines);
+void calculateSums(board* brd);
+void showAll(board* brd);
+bool show(board* brd, int x, int y, bool recursion);
 
 #endif
