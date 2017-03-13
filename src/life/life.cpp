@@ -1,6 +1,6 @@
 /*
- * main.cpp
- * textsweeper Source Code
+ * life/life.cpp
+ * Textsweeper Source Code
  * Available on Github
  *
  * Copyright (C) 2017 Karol "digitcrusher" Łacina
@@ -19,46 +19,48 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdlib.h>
-#include <karolslib/src/karolslib.h>
-#include <karolslib/src/utils.h>
-#include <karolslib/src/module.h>
-#include <karolslib/src/terminal.h>
+#include <src/utils.h>
+#include <src/module.h>
+#include <src/terminal.h>
 #include "board.h"
+#include "life.h"
 
 int curx, cury;
 board brd;
 bool running=1;
 bool playing=1;
-bool win=0;
 module options;
 void stop() {
     exit(0);
 }
-void flag() {
-    tile* to = getTile(&brd, curx, cury);
-    if(!(brd.flags <= 0) || to->flagged) {
-        if(!to->show) {
-           to->flagged = !to->flagged;
-            if(to->flagged) {
-                --brd.flags;
-            }else {
-                ++brd.flags;
-            }
-        }
-    }else {
-        swrite(stdterm, "You don't have enough flags!\n");
-        cread(stdterm);
-    }
-}
-void show() {
-    if(show(&brd, curx, cury, 0)) {
-        playing = 0;
-        win = 0;
-    }
-}
 void restart() {
     playing = 0;
-    win = 0;
+}
+void set() {
+    //Prepare terminal for user input
+    int wcurx=stdterm->ocurx, wcury=stdterm->ocury;
+    stdterm->ocurx = curx;
+    stdterm->ocury = cury;
+    stdterm->flags = TERMINAL_MOVE_OCUR | TERMINAL_CURSOR;
+    //Get input
+    tile* to = getTile(&brd, curx, cury);
+    to->alive = !to->alive;
+    //Go back to normal
+    curx = stdterm->ocurx;
+    cury = stdterm->ocury;
+    stdterm->ocurx = wcurx;
+    stdterm->ocury = wcury;
+    stdterm->flags = TERMINAL_DEFAULT_FLAGS;
+}
+void step() {
+}
+void loop() {
+    if(!kbhit(stdterm)) {
+        step();
+    }
+}
+void randomize() {
+    generateBoard(&brd);
 }
 void settings() {
     choose:
@@ -91,25 +93,25 @@ void addOpt(routine opt) {
 board* getBoard() {
     return &brd;
 }
-int main(int argc, char** argv) {
-    karolslib_init();
+void life_init() {
     options = *createModule("options", NULL);
     addRtn(*createRoutine("addOpt", (void (*)())addOpt), getMod("main", modbrd));
     addRtn(*createRoutine("getBoard", (void (*)())getBoard), getMod("main", modbrd));
     ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Quit", (void (*)())stop));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Flag", (void (*)())flag));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Show", (void (*)())show));
     ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Restart", (void (*)())restart));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Set", (void (*)())set));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Step", (void (*)())step));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Step in a loop", (void (*)())loop));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Randomize", (void (*)())randomize));
     ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Settings", (void (*)())settings));
-    swrite(stdterm, "textsweeper 1.0 Copyright (C) 2017 Karol \"digitcrusher\" Łacina\n");
-    swrite(stdterm, "This program comes with ABSOLUTELY NO WARRANTY.\n");
-    swrite(stdterm, "This is free software, and you are welcome to redistribute it\n");
-    swrite(stdterm, "under certain conditions.\n");
+}
+int life_run(int argc, char** argv) {
+    swrite(stdterm, "Conway's Game of Life C++ Edition 1.0\n");
     while(running) {
         {
             //Get input
             choose:
-            unsigned int x, y, mines;
+            unsigned int x, y;
             char* str;
             swrite(stdterm, "Enter the size of the board:\n");
             swrite(stdterm, "Column ");
@@ -122,48 +124,16 @@ int main(int argc, char** argv) {
             if(stoui(str, &y)) {
                 goto choose;
             }
-            swrite(stdterm, "Mines ");
-            str = sread(stdterm);
-            bool error = stoui(str, &mines);
-            if(error || mines > x*y) {
-                goto choose;
-            }
             swrite(stdterm, "Initializing board...\n");
-            createBoard(&brd, x, y, {0, 0, 1, 0, 0, 0});
-            swrite(stdterm, "Generating board...\n");
-            generateBoard(&brd, mines);
+            createBoard(&brd, x, y, {0});
         }
-        int starttime=time(0);
         playing = 1;
         while(playing) {
-            //Check if won
-            bool clear=1;
-            int flagged=0;
-            for(int x=0; x<brd.size.x; x++) {
-                for(int y=0; y<brd.size.y; y++) {
-                    tile* tile = getTile(&brd, x, y);
-                    if(!tile->mine && !tile->show) {
-                        clear = 0;
-                    }
-                    if(tile->mine && tile->flagged) {
-                        flagged++;
-                    }else if(tile->mine && !tile->flagged) {
-                        flagged = 0;
-                    }
-                }
-            }
-            if(flagged == brd.mines || clear) {
-                playing = 0;
-                win = 1;
-                break;
-            }
-            //Input loop
             while(1) {
                 //Print TUI
                 stdterm->flags = (TERMINAL_DEFAULT_FLAGS)-(TERMINAL_N_UPDATE*(TERMINAL_DEFAULT_FLAGS) & TERMINAL_N_UPDATE);
                 flush(stdterm, TERMINAL_OUTPUT);
                 printBoard(&brd);
-                swritef(stdterm, "You have %d flags.\n", brd.flags);
                 for(int i=0; i<options.size; i++) {
                     if(*getRtn(i, &options)->name != '\0') {
                         swritef(stdterm, "%d-%s\n", i, getRtn(i, &options)->name);
@@ -171,19 +141,10 @@ int main(int argc, char** argv) {
                 }
                 swrite(stdterm, "Choose an option.\n");
                 //Get input
-                int wcurx=stdterm->ocurx, wcury=stdterm->ocury;
-                stdterm->ocurx = curx;
-                stdterm->ocury = cury;
-                stdterm->flags = TERMINAL_MOVE_OCUR | TERMINAL_CURSOR;
-                char c = cread(stdterm);
-                int opt = c-'0';
-                curx = stdterm->ocurx;
-                cury = stdterm->ocury;
-                stdterm->ocurx = wcurx;
-                stdterm->ocury = wcury;
-                stdterm->flags = TERMINAL_DEFAULT_FLAGS;
+                char* str = sread(stdterm);
+                int opt;
                 //Parse the input
-                if(c < '0' || c > '9') {
+                if(stoi(str, &opt)) {
                     swrite(stdterm, "Please enter a number.\n");
                     cread(stdterm);
                     continue;
@@ -199,16 +160,8 @@ int main(int argc, char** argv) {
             }
         }
         //Show statistics
-        showAll(&brd);
         flush(stdterm, TERMINAL_OUTPUT);
         printBoard(&brd);
-        swrite(stdterm, "Game Over\n");
-        if(win) {
-            swrite(stdterm, "You win! Yay!\n");
-        }else {
-            swrite(stdterm, "You lose! Hahaha!\n");
-        }
-        swritef(stdterm, "Time: %ds\n", time(0)-starttime);
         swrite(stdterm, "Press any key to continue...\n");
         cread(stdterm);
         deleteBoard(&brd);

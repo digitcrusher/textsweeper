@@ -1,5 +1,5 @@
 # Makefile
-# Textsweeper Source Code
+# textsweeper Source Code
 # Available on Github
 #
 # Copyright (C) 2017 Karol "digitcrusher" Łacina
@@ -19,37 +19,20 @@
 SD=./src
 BD=./build
 CC=g++
-CCFLAGS=-Wall -std=c++11 -ggdb -O0
-CCINCLUDE=./
-CCLIBS=-L/usr/lib/X11R6/lib -lX11
+CCFLAGS=-Wall -Wno-write-strings -std=c++11 -ggdb -O0
+CCINCLUDE=-I./
+CCLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
 
 all: clean textsweeper
 
-textsweeper: main.o math.o module.o terminal.o textsweeper/board.o textsweeper/textsweeper.o utils.o
-	$(CC) $(BD)/main.o $(BD)/math.o $(BD)/module.o $(BD)/terminal.o \
-		$(BD)/board.o $(BD)/textsweeper.o $(BD)/utils.o $(CCLIBS) -o $(BD)/textsweeper
+textsweeper: board.o main.o
+	$(CC) $(BD)/board.o $(BD)/main.o $(CCLIBS) -o $(BD)/textsweeper
+
+board.o:
+	$(CC) $(CCFLAGS) $(CCINCLUDE) $(SD)/board.cpp -c -o $(BD)/board.o
 
 main.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/main.cpp -c -o $(BD)/main.o
-
-math.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/math.cpp -c -o $(BD)/math.o
-
-module.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/module.cpp -c -o $(BD)/module.o
-
-terminal.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/terminal.cpp -c -o $(BD)/terminal.o
-
-textsweeper/board.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/textsweeper/board.cpp -c -o $(BD)/board.o
-
-textsweeper/textsweeper.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/textsweeper/textsweeper.cpp -c -o $(BD)/textsweeper.o
-
-utils.o:
-	$(CC) $(CCFLAGS) -I $(CCINCLUDE) $(SD)/utils.cpp -c -o $(BD)/utils.o
+	$(CC) $(CCFLAGS) $(CCINCLUDE) $(SD)/main.cpp -c -o $(BD)/main.o
 
 clean:
-	rm -f $(BD)/textsweeper $(BD)/main.o $(BD)/math.o $(BD)/module.o $(BD)/terminal.o \
-		$(BD)/textsweeper/board.o $(BD)/textsweeper/textsweeper.o $(BD)/utils.o
+	rm -f $(BD)/textsweeper $(BD)/board.o $(BD)/main.o
