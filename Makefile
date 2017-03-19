@@ -25,7 +25,7 @@ LDFLAGS=
 LDLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
 #For windows:
 #LDFLAGS=-mwindows
-#LDLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
+#LDLIBS=-L./karolslib/build/ -lkarolslib -lgdi32
 
 all: clean textsweeper
 
