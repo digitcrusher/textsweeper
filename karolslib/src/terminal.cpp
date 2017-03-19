@@ -25,7 +25,7 @@
 #include <src/terminal.h>
 #include <src/karolslib.h>
 
-terminal* stdterm = createTerminal(TERMINAL_DEFAULT_BUFF_WIDTH, TERMINAL_DEFAULT_BUFF_HEIGHT, TERMINAL_DEFAULT_FLAGS, NULL, NULL);
+terminal* stdterm;
 
 #if defined(_WIN32)
 static unsigned int windowid=0;
@@ -153,9 +153,9 @@ void redrawTerminal(terminal* term) {
             if(term->flags & TERMINAL_CURSOR && x == term->ocurx && y == term->ocury) {
                 XFillRectangle(term->d, term->p, term->gc
                               ,TERMINAL_GET_CHAR_X_COORD(term, x)-term->offsetx-term->marginleft
-                              ,TERMINAL_GET_CHAR_Y_COORD(term, y)-term->offsety+term->marginbottom
+                              ,TERMINAL_GET_CHAR_Y_COORD(term, y)-term->offsety-term->margintop
                               ,term->fontw+term->marginleft+term->marginright
-                              ,term->fonth-2+term->margintop+term->marginbottom);
+                              ,term->fonth+term->margintop+term->marginbottom);
                 XSetForeground(term->d, term->gc, BlackPixel(term->d, term->s));
                 XDrawString(term->d, term->p, term->gc
                            ,TERMINAL_GET_CHAR_X_COORD(term, x)

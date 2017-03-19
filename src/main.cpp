@@ -95,13 +95,13 @@ board* getBoard() {
 int main(int argc, char** argv) {
     karolslib_init();
     options = *createModule("options", NULL);
-    addRtn(*createRoutine("addOpt", (void (*)())addOpt), getMod("main", modbrd));
-    addRtn(*createRoutine("getBoard", (void (*)())getBoard), getMod("main", modbrd));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Quit", (void (*)())stop));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Flag", (void (*)())flag));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Show", (void (*)())show));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Restart", (void (*)())restart));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", modbrd))->func)(*createRoutine("Settings", (void (*)())settings));
+    addRtn(*createRoutine("addOpt", (void (*)())addOpt), getMod("main", stdmodbrd));
+    addRtn(*createRoutine("getBoard", (void (*)())getBoard), getMod("main", stdmodbrd));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Quit", (void (*)())stop));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Flag", (void (*)())flag));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Show", (void (*)())show));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Restart", (void (*)())restart));
+    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Settings", (void (*)())settings));
     swrite(stdterm, "textsweeper 1.0 Copyright (C) 2017 Karol \"digitcrusher\" Łacina\n");
     swrite(stdterm, "This program comes with ABSOLUTELY NO WARRANTY.\n");
     swrite(stdterm, "This is free software, and you are welcome to redistribute it\n");

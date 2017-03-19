@@ -60,8 +60,6 @@ void generateBoard(board* brd, int mines) {
     calculateSums(brd);
 }
 void printBoard(board* brd) {
-    stdterm->ocurx = 0;
-    stdterm->ocury = 0;
     for(int y=0; y<brd->size.y; y++) {
         for(int x=0; x<brd->size.x; x++) {
             tile* tile = getTile(brd, x, y);

@@ -19,20 +19,24 @@
 SD=./src
 BD=./build
 CC=g++
-CCFLAGS=-Wall -Wno-write-strings -std=c++11 -ggdb -O0
-CCINCLUDE=-I.
-CCLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
+CCFLAGS=-Wall -Wno-write-strings -std=c++11 -ggdb -O0 -I.
+LD=$(CC)
+LDFLAGS=
+LDLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
+#For windows:
+#LDFLAGS=-mwindows
+#LDLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
 
 all: clean textsweeper
 
 textsweeper: board.o main.o
-	$(CC) $(BD)/board.o $(BD)/main.o $(CCLIBS) -o $(BD)/textsweeper
+	$(LD) $(LDFLAGS) $(BD)/board.o $(BD)/main.o $(LDLIBS) -o $(BD)/textsweeper
 
 board.o:
-	$(CC) $(CCFLAGS) $(CCINCLUDE) $(SD)/board.cpp -c -o $(BD)/board.o
+	$(CC) $(CCFLAGS) $(SD)/board.cpp -c -o $(BD)/board.o
 
 main.o:
-	$(CC) $(CCFLAGS) $(CCINCLUDE) $(SD)/main.cpp -c -o $(BD)/main.o
+	$(CC) $(CCFLAGS) $(SD)/main.cpp -c -o $(BD)/main.o
 
 clean:
 	rm -f $(BD)/textsweeper $(BD)/board.o $(BD)/main.o
