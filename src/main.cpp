@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdlib.h>
+#include <time.h>
 #include <karolslib/src/karolslib.h>
 #include <karolslib/src/utils.h>
 #include <karolslib/src/module.h>
@@ -160,7 +161,7 @@ int main(int argc, char** argv) {
             //Input loop
             while(1) {
                 //Print TUI
-                stdterm->flags = (TERMINAL_DEFAULT_FLAGS)-(TERMINAL_N_UPDATE*(TERMINAL_DEFAULT_FLAGS) & TERMINAL_N_UPDATE);
+                stdterm->flags = TERMINAL_DEFAULT_FLAGS-(TERMINAL_N_UPDATE*TERMINAL_DEFAULT_FLAGS & TERMINAL_N_UPDATE);
                 flush(stdterm, TERMINAL_OUTPUT);
                 printBoard(&brd);
                 swritef(stdterm, "You have %d flags.\n", brd.flags);

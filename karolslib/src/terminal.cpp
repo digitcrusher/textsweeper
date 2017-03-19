@@ -1,6 +1,6 @@
 /*
  * terminal.cpp
- * Karolslib Source Code
+ * karolslib Source Code
  * Available on Github
  *
  * Copyright (C) 2017 Karol "digitcrusher" Łacina
@@ -23,10 +23,25 @@
 #include <stdarg.h>
 #include <src/utils.h>
 #include <src/terminal.h>
+#include <src/karolslib.h>
 
-terminal* stdterm = createTerminal(TERMINAL_DEFAULT_BUFF_WIDTH, TERMINAL_DEFAULT_BUFF_HEIGHT, TERMINAL_DEFAULT_FLAGS, NULL);
+terminal* stdterm = createTerminal(TERMINAL_DEFAULT_BUFF_WIDTH, TERMINAL_DEFAULT_BUFF_HEIGHT, TERMINAL_DEFAULT_FLAGS, NULL, NULL);
 
-terminal* createTerminal(int w, int h, int flags, void (*close)(terminal*)) {
+#if defined(_WIN32)
+static unsigned int windowid=0;
+static LRESULT CALLBACK karolslib_WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
+    HDC hdc;
+    PAINTSTRUCT ps;
+    switch(iMsg) {
+        case WM_PAINT:
+		    hdc = BeginPaint(hwnd, &ps);
+    		EndPaint(hwnd, &ps);
+            return 0;
+    }
+    return DefWindowProc(hwnd, iMsg, wParam, lParam); //Dump remainning message that wasn't calculated
+}
+#endif
+terminal* createTerminal(int w, int h, int flags, void (*close)(terminal*), void (*redraw)(terminal*)) {
     terminal* term = (terminal*)malloc(sizeof(terminal));
     term->fontw = TERMINAL_DEFAULT_FONT_WIDTH;
     term->fonth = TERMINAL_DEFAULT_FONT_HEIGHT;
@@ -37,6 +52,7 @@ terminal* createTerminal(int w, int h, int flags, void (*close)(terminal*)) {
     term->marginleft = TERMINAL_DEFAULT_MARGINLEFT;
     term->marginbottom = TERMINAL_DEFAULT_MARGINBOTTOM;
     term->close = close;
+    term->redraw = redraw;
     term->buffw = w;
     term->buffh = h;
     term->ibuff = (char*)malloc(TERMINAL_GET_BUFF_BITS(term));
@@ -46,9 +62,11 @@ terminal* createTerminal(int w, int h, int flags, void (*close)(terminal*)) {
     term->ocurx = 0;
     term->ocury = 0;
     term->flags = flags;
-
+    memset(term->obuff, '\0', TERMINAL_GET_BUFF_BYTES(term));
+    memset(term->ibuff, '\0', TERMINAL_GET_BUFF_BYTES(term));
+#if defined(__linux__)
     term->d = XOpenDisplay(NULL);
-    if(term->d == NULL) {
+    if(!term->d) {
         return NULL;
     }
     term->s = DefaultScreen(term->d);
@@ -63,24 +81,65 @@ terminal* createTerminal(int w, int h, int flags, void (*close)(terminal*)) {
     XSetForeground(term->d, term->gc, WhitePixel(term->d, term->s));
     XClearWindow(term->d, term->w);
     XMapWindow(term->d, term->w);
+#elif defined(_WIN32)
+    char* szAppName = uitos(windowid++);
+    WNDCLASSEX wndclass; //Temporary structure with window settings
+    wndclass.cbSize        = sizeof(wndclass); //Size of WNDCLASSEX
+    wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; //Style parameters
+    wndclass.lpfnWndProc   = karolslib_WndProc; //Pointer to WndProc which handles messages
+    wndclass.cbClsExtra    = 0;
+    wndclass.cbWndExtra    = 0;
+    wndclass.hInstance     = karolslib_hInstance;
+    wndclass.hIcon         = LoadIcon(NULL,IDI_APPLICATION); //Load icon for taskbar
+    wndclass.hCursor       = LoadCursor(NULL,IDC_ARROW); //Load cursor for window
+    wndclass.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH); //Window background color
+    wndclass.lpszMenuName  = NULL;
+    wndclass.lpszClassName = szAppName; //Window ID
+    wndclass.hIconSm       = LoadIcon(NULL,IDI_APPLICATION); //Load icon for title bar
+    if(!RegisterClassEx(&wndclass)) { //Register wndclass structure
+        return NULL;
+    }
+    term->hwnd = CreateWindow(szAppName, //Window ID
+                        "Terminal", //Window title
+                        WS_OVERLAPPEDWINDOW, //Window style
+                        CW_USEDEFAULT, //Starting x position
+                        CW_USEDEFAULT, //Starting y position
+                        TERMINAL_GET_TEXTAREA_WIDTH(term), //Starting width
+                        TERMINAL_GET_TEXTAREA_HEIGHT(term), //Starting height
+                        NULL, //Handle to parent window
+                        NULL, //Handle to parent window menu
+                        karolslib_hInstance, //Handle to window initiation argument
+                        NULL
+                        );
+    if(!term->hwnd) {
+        return NULL;
+    }
+    ShowWindow(term->hwnd, karolslib_iCmdShow); //Show window
+    UpdateWindow(term->hwnd); //Redraw window
+    free(szAppName);
+#endif
+    return term;
+}
+void deleteTerminal(terminal* term) {
+    free(term->ibuff);
+    free(term->obuff);
+#if defined(__linux__)
+    XFreeGC(term->d, term->gc);
+    XDestroyWindow(term->d, term->w);
+    XCloseDisplay(term->d);
+#elif defined(_WIN32)
+    DestroyWindow(term->hwnd);
+#endif
+    free(term);
+}
+void redrawTerminal(terminal* term) {
+#if defined(__linux__)
     XWindowAttributes wa;
     XGetWindowAttributes(term->d, term->w, &wa);
     term->p = XCreatePixmap(term->d, term->w
                             ,TERMINAL_GET_TEXTAREA_WIDTH(term)
                             ,TERMINAL_GET_TEXTAREA_HEIGHT(term)
                             ,wa.depth);
-    return term;
-}
-void deleteTerminal(terminal* term) {
-    free(term->ibuff);
-    free(term->obuff);
-    XFreePixmap(term->d, term->p);
-    XFreeGC(term->d, term->gc);
-    XDestroyWindow(term->d, term->w);
-    XCloseDisplay(term->d);
-    free(term);
-}
-void redrawTerminal(terminal* term) {
     XSetForeground(term->d, term->gc, BlackPixel(term->d, term->s));
     XFillRectangle(term->d, term->p, term->gc, 0, 0
                   ,TERMINAL_GET_TEXTAREA_WIDTH(term)
@@ -93,8 +152,8 @@ void redrawTerminal(terminal* term) {
             *(c+1) = '\0';
             if(term->flags & TERMINAL_CURSOR && x == term->ocurx && y == term->ocury) {
                 XFillRectangle(term->d, term->p, term->gc
-                              ,TERMINAL_GET_CHAR_X_COORD(term, x)-term->marginleft
-                              ,TERMINAL_GET_CHAR_Y_COORD(term, y-1)+2+term->marginbottom
+                              ,TERMINAL_GET_CHAR_X_COORD(term, x)-term->offsetx-term->marginleft
+                              ,TERMINAL_GET_CHAR_Y_COORD(term, y)-term->offsety+term->marginbottom
                               ,term->fontw+term->marginleft+term->marginright
                               ,term->fonth-2+term->margintop+term->marginbottom);
                 XSetForeground(term->d, term->gc, BlackPixel(term->d, term->s));
@@ -109,11 +168,18 @@ void redrawTerminal(terminal* term) {
             }
         }
     }
+    if(term->redraw != NULL) {
+        term->redraw(term);
+    }
     XCopyArea(term->d, term->p, term->w, term->gc, 0, 0
              ,TERMINAL_GET_TEXTAREA_WIDTH(term)
              ,TERMINAL_GET_TEXTAREA_HEIGHT(term), 0, 0);
+    XFreePixmap(term->d, term->p);
+#elif defined(_WIN32)
+#endif
 }
 void updateTerminal(terminal* term) {
+#if defined(__linux__)
     XEvent e;
     while(XPending(term->d)) {
         XNextEvent(term->d, &e);
@@ -182,9 +248,71 @@ void updateTerminal(terminal* term) {
         }
     }
     redrawTerminal(term);
+#elif defined(_WIN32)
+    MSG msg;
+    while(PeekMessage(&msg, term->hwnd, 0, 0, 1)) {
+        TranslateMessage(&msg);
+        switch(msg.message) {
+            case WM_QUIT:
+                exit(0);
+                break;
+            case WM_DESTROY:
+            case WM_CLOSE:
+                if(term->close != NULL) {
+                    term->close(term);
+                }
+                break;
+            case WM_PAINT:
+                redrawTerminal(term);
+                break;/*
+            case WM_CHAR:
+                break;*/
+            case WM_KEYDOWN:
+                switch(msg.wParam) {
+                    case VK_UP:
+                        --term->icury;
+                        if(term->flags & TERMINAL_MOVE_OCUR) {
+                            --term->ocury;
+                        }
+                        break;
+                    case VK_LEFT:
+                        --term->icurx;
+                        if(term->flags & TERMINAL_MOVE_OCUR) {
+                            --term->ocurx;
+                        }
+                        break;
+                    case VK_DOWN:
+                        if(TERMINAL_GET_CURR_IBUFF_CHAR(term) != '\0') {
+                            ++term->icury;
+                        }
+                        if(term->flags & TERMINAL_MOVE_OCUR) {
+                            ++term->ocury;
+                        }
+                        break;
+                    case VK_RIGHT:
+                        if(TERMINAL_GET_CURR_IBUFF_CHAR(term) != '\0') {
+                            ++term->icurx;
+                        }
+                        if(term->flags & TERMINAL_MOVE_OCUR) {
+                            ++term->ocurx;
+                        }
+                    break;
+                }
+                checkTerminal(term);
+                break;
+            default:
+                DispatchMessage(&msg);
+                break;
+        }
+    }
+    redrawTerminal(term);
+#endif
 }
 void checkTerminal(terminal* term) {
+#if defined(__linux__)
     XResizeWindow(term->d, term->w, TERMINAL_GET_TEXTAREA_WIDTH(term), TERMINAL_GET_TEXTAREA_HEIGHT(term));
+#elif defined(_WIN32)
+#endif
     if(term->ocurx < 0) {
         term->ocurx = term->buffw-1;
         --term->ocury;

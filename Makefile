@@ -20,7 +20,7 @@ SD=./src
 BD=./build
 CC=g++
 CCFLAGS=-Wall -Wno-write-strings -std=c++11 -ggdb -O0
-CCINCLUDE=-I./
+CCINCLUDE=-I.
 CCLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
 
 all: clean textsweeper

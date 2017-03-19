@@ -1,5 +1,5 @@
 # Makefile
-# Karolslib Source Code
+# karolslib Source Code
 # Available on Github
 #
 # Copyright (C) 2017 Karol "digitcrusher" Łacina
@@ -18,19 +18,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 SD=./src
 BD=./build
-AR=ar
-ARFLAGS=rcs
-ARINCLUDE=
-ARLIBS=
+LD=ar
+LDFLAGS=rcs
+LDLIBS=
 CC=g++
 CCFLAGS=-Wall -std=c++11 -ggdb -O0
-CCINCLUDE=-I./
-CCLIBS=
+CCINCLUDE=-I.
 
 all: clean karolslib
 
 karolslib: karolslib.o math.o module.o terminal.o utils.o
-	$(AR) $(ARFLAGS) $(BD)/libkarolslib.a $(BD)/karolslib.o $(BD)/math.o $(BD)/module.o $(BD)/terminal.o $(BD)/utils.o $(ARLIBS)
+	$(LD) $(LDFLAGS) $(BD)/libkarolslib.a $(BD)/karolslib.o $(BD)/math.o $(BD)/module.o $(BD)/terminal.o $(BD)/utils.o $(LDLIBS)
 
 karolslib.o:
 	$(CC) $(CCFLAGS) $(CCINCLUDE) $(SD)/karolslib.cpp -c -o $(BD)/karolslib.o
