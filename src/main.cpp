@@ -32,6 +32,17 @@ bool running=1;
 bool playing=1;
 bool win=0;
 KL_module options;
+void help() {
+    KL_swrite(KL_stdterm, "    How to play\n");
+    KL_swrite(KL_stdterm, "Use arrow keys to navigate the cursor.\n");
+    KL_swrite(KL_stdterm, "The highlighted tile is where the cursor is.\n");
+    KL_swrite(KL_stdterm, "Press 1 to flag the highlighted tile.\n");
+    KL_swrite(KL_stdterm, "Press 2 to show the highlighted tile.\n");
+    KL_swrite(KL_stdterm, "Every game you get to choose the number of mines\n");
+    KL_swrite(KL_stdterm, "and the size of the board.\n");
+    KL_swrite(KL_stdterm, "Press any key to continue...\n");
+    KL_cread(KL_stdterm);
+}
 void flag() {
     if(flag(&brd, curx, cury)) {
         KL_swrite(KL_stdterm, "You don't have enough flags!\n");
@@ -88,7 +99,7 @@ int main(int argc, char** argv) {
     options = *KL_createModule("options", NULL);
     KL_addRtn(*KL_createRoutine("addOpt", (void (*)())addOpt), KL_getMod("main", KL_stdmodbrd));
     KL_addRtn(*KL_createRoutine("getBoard", (void (*)())getBoard), KL_getMod("main", KL_stdmodbrd));
-    addOpt(*KL_createRoutine("", (void (*)())NULL));
+    addOpt(*KL_createRoutine("Help", (void (*)())help));
     addOpt(*KL_createRoutine("Flag", (void (*)())flag));
     addOpt(*KL_createRoutine("Show", (void (*)())show));
     addOpt(*KL_createRoutine("Solve", (void (*)())solve));
@@ -99,6 +110,7 @@ int main(int argc, char** argv) {
     KL_swrite(KL_stdterm, "This program comes with ABSOLUTELY NO WARRANTY.\n");
     KL_swrite(KL_stdterm, "This is free software, and you are welcome to redistribute it\n");
     KL_swrite(KL_stdterm, "under certain conditions.\n");
+    help();
     while(running) {
         {
             //Get input
