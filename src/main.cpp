@@ -21,9 +21,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <karolslib/src/karolslib.h>
-#include <karolslib/src/utils.h>
-#include <karolslib/src/module.h>
-#include <karolslib/src/terminal.h>
+#include <karolslib/src/utils/utils.h>
+#include <karolslib/src/utils/module.h>
+#include <karolslib/src/window/terminal.h>
 #include "board.h"
 
 int curx, cury;
@@ -31,31 +31,18 @@ board brd;
 bool running=1;
 bool playing=1;
 bool win=0;
-module options;
-void stop() {
-    exit(0);
-}
+KL_module options;
 void flag() {
-    tile* to = getTile(&brd, curx, cury);
-    if(!(brd.flags <= 0) || to->flagged) {
-        if(!to->show) {
-           to->flagged = !to->flagged;
-            if(to->flagged) {
-                --brd.flags;
-            }else {
-                ++brd.flags;
-            }
-        }
-    }else {
-        swrite(stdterm, "You don't have enough flags!\n");
-        cread(stdterm);
+    if(flag(&brd, curx, cury)) {
+        KL_swrite(KL_stdterm, "You don't have enough flags!\n");
+        KL_cread(KL_stdterm);
     }
 }
 void show() {
-    if(show(&brd, curx, cury, 0)) {
-        playing = 0;
-        win = 0;
-    }
+    show(&brd, curx, cury, 0);
+}
+void solve() {
+    solveBoard(&brd);
 }
 void restart() {
     playing = 0;
@@ -64,96 +51,112 @@ void restart() {
 void settings() {
     choose:
     char* str;
-    swrite(stdterm, "Settings\n");
-    swrite(stdterm, "Upper margin ");
-    str = sread(stdterm);
-    if(stoi(str, &stdterm->margintop)) {
+    KL_swrite(KL_stdterm, "Settings\n");
+    KL_swrite(KL_stdterm, "Upper margin ");
+    str = KL_sread(KL_stdterm);
+    if(stoi(str, &KL_stdterm->margintop)) {
         goto choose;
     }
-    swrite(stdterm, "Right margin ");
-    str = sread(stdterm);
-    if(stoi(str, &stdterm->marginright)) {
+    KL_swrite(KL_stdterm, "Right margin ");
+    str = KL_sread(KL_stdterm);
+    if(stoi(str, &KL_stdterm->marginright)) {
         goto choose;
     }
-    swrite(stdterm, "Bottom margin ");
-    str = sread(stdterm);
-    if(stoi(str, &stdterm->marginbottom)) {
+    KL_swrite(KL_stdterm, "Bottom margin ");
+    str = KL_sread(KL_stdterm);
+    if(stoi(str, &KL_stdterm->marginbottom)) {
         goto choose;
     }
-    swrite(stdterm, "Left margin ");
-    str = sread(stdterm);
-    if(stoi(str, &stdterm->marginleft)) {
+    KL_swrite(KL_stdterm, "Left margin ");
+    str = KL_sread(KL_stdterm);
+    if(stoi(str, &KL_stdterm->marginleft)) {
         goto choose;
     }
 }
-void addOpt(routine opt) {
-    addRtn(opt, &options);
+void stop() {
+    KL_deinit();
+    exit(0);
+}
+void addOpt(KL_routine opt) {
+    KL_addRtn(opt, &options);
 }
 board* getBoard() {
     return &brd;
 }
 int main(int argc, char** argv) {
-    karolslib_init();
-    options = *createModule("options", NULL);
-    addRtn(*createRoutine("addOpt", (void (*)())addOpt), getMod("main", stdmodbrd));
-    addRtn(*createRoutine("getBoard", (void (*)())getBoard), getMod("main", stdmodbrd));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Quit", (void (*)())stop));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Flag", (void (*)())flag));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Show", (void (*)())show));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Restart", (void (*)())restart));
-    ((void (*)(routine))getRtn("addOpt", getMod("main", stdmodbrd))->func)(*createRoutine("Settings", (void (*)())settings));
-    swrite(stdterm, "textsweeper 1.0 Copyright (C) 2017 Karol \"digitcrusher\" Łacina\n");
-    swrite(stdterm, "This program comes with ABSOLUTELY NO WARRANTY.\n");
-    swrite(stdterm, "This is free software, and you are welcome to redistribute it\n");
-    swrite(stdterm, "under certain conditions.\n");
+    KL_init();
+    options = *KL_createModule("options", NULL);
+    KL_addRtn(*KL_createRoutine("addOpt", (void (*)())addOpt), KL_getMod("main", KL_stdmodbrd));
+    KL_addRtn(*KL_createRoutine("getBoard", (void (*)())getBoard), KL_getMod("main", KL_stdmodbrd));
+    addOpt(*KL_createRoutine("", (void (*)())NULL));
+    addOpt(*KL_createRoutine("Flag", (void (*)())flag));
+    addOpt(*KL_createRoutine("Show", (void (*)())show));
+    addOpt(*KL_createRoutine("Solve", (void (*)())solve));
+    addOpt(*KL_createRoutine("Restart", (void (*)())restart));
+    addOpt(*KL_createRoutine("Settings", (void (*)())settings));
+    addOpt(*KL_createRoutine("Quit", (void (*)())stop));
+    KL_swrite(KL_stdterm, "textsweeper 1.1 Copyright (C) 2017 Karol \"digitcrusher\" Łacina\n");
+    KL_swrite(KL_stdterm, "This program comes with ABSOLUTELY NO WARRANTY.\n");
+    KL_swrite(KL_stdterm, "This is free software, and you are welcome to redistribute it\n");
+    KL_swrite(KL_stdterm, "under certain conditions.\n");
     while(running) {
         {
             //Get input
             choose:
             unsigned int x, y, mines;
             char* str;
-            swrite(stdterm, "Enter the size of the board:\n");
-            swrite(stdterm, "Column ");
-            str = sread(stdterm);
+            KL_swrite(KL_stdterm, "Enter the size of the board:\n");
+            KL_swrite(KL_stdterm, "Column ");
+            str = KL_sread(KL_stdterm);
             if(stoui(str, &x)) {
                 goto choose;
             }
-            swrite(stdterm, "Row ");
-            str = sread(stdterm);
+            KL_swrite(KL_stdterm, "Row ");
+            str = KL_sread(KL_stdterm);
             if(stoui(str, &y)) {
                 goto choose;
             }
-            swrite(stdterm, "Mines ");
-            str = sread(stdterm);
+            KL_swrite(KL_stdterm, "Mines ");
+            str = KL_sread(KL_stdterm);
             bool error = stoui(str, &mines);
             if(error || mines > x*y) {
                 goto choose;
             }
-            swrite(stdterm, "Initializing board...\n");
-            createBoard(&brd, x, y, {0, 0, 1, 0, 0, 0});
-            swrite(stdterm, "Generating board...\n");
+            KL_swrite(KL_stdterm, "Initializing board...\n");
+            createBoard(&brd, x, y, {0, 0, 0, 0, 0, 0});
+            KL_swrite(KL_stdterm, "Generating board...\n");
             generateBoard(&brd, mines);
+            brd.nulltemp = {0, 1, 1, 0, 0, 0};
         }
         int starttime=time(0);
         playing = 1;
         while(playing) {
             //Check if won
             bool clear=1;
-            int flagged=0;
+            int flag=0;
+            bool fail=0;
             for(int x=0; x<brd.size.x; x++) {
                 for(int y=0; y<brd.size.y; y++) {
                     tile* tile = getTile(&brd, x, y);
+                    if(tile->mine && tile->show) {
+                        fail = 1;
+                    }
                     if(!tile->mine && !tile->show) {
                         clear = 0;
                     }
-                    if(tile->mine && tile->flagged) {
-                        flagged++;
-                    }else if(tile->mine && !tile->flagged) {
-                        flagged = 0;
+                    if(tile->mine && tile->flag) {
+                        flag++;
+                    }else if(tile->mine && !tile->flag) {
+                        flag = 0;
                     }
                 }
             }
-            if(flagged == brd.mines || clear) {
+            if(fail) {
+                playing = 0;
+                win = 0;
+                break;
+            }
+            if(flag == brd.mines || clear) {
                 playing = 0;
                 win = 1;
                 break;
@@ -161,58 +164,60 @@ int main(int argc, char** argv) {
             //Input loop
             while(1) {
                 //Print TUI
-                stdterm->flags = TERMINAL_DEFAULT_FLAGS-(TERMINAL_N_UPDATE*TERMINAL_DEFAULT_FLAGS & TERMINAL_N_UPDATE);
-                flush(stdterm, TERMINAL_OUTPUT);
+                KL_flush(KL_stdterm, TERMINAL_OUTPUT);
                 printBoard(&brd);
-                swritef(stdterm, "You have %d flags.\n", brd.flags);
+                KL_swritef(KL_stdterm, "You have %d flags.\n", brd.flags);
                 for(int i=0; i<options.size; i++) {
-                    if(*getRtn(i, &options)->name != '\0') {
-                        swritef(stdterm, "%d-%s\n", i, getRtn(i, &options)->name);
+                    if(*KL_getRtn(i, &options)->name != '\0') {
+                        KL_swritef(KL_stdterm, "%d-%s\n", i, KL_getRtn(i, &options)->name);
                     }
                 }
-                swrite(stdterm, "Choose an option.\n");
+                KL_swrite(KL_stdterm, "Choose an option.\n");
                 //Get input
-                int wcurx=stdterm->ocurx, wcury=stdterm->ocury;
-                stdterm->ocurx = curx;
-                stdterm->ocury = cury;
-                stdterm->flags = TERMINAL_MOVE_OCUR | TERMINAL_CURSOR;
-                char c = cread(stdterm);
+                int wcurx=KL_stdterm->ocurx, wcury=KL_stdterm->ocury;
+                KL_gotoxy(KL_stdterm, curx, cury);
+                KL_stdterm->flags = TERMINAL_MOVE_OCUR | TERMINAL_CURSOR;
+                char c = KL_cread(KL_stdterm);
                 int opt = c-'0';
-                curx = stdterm->ocurx;
-                cury = stdterm->ocury;
-                stdterm->ocurx = wcurx;
-                stdterm->ocury = wcury;
-                stdterm->flags = TERMINAL_DEFAULT_FLAGS;
+                curx = KL_stdterm->ocurx;
+                cury = KL_stdterm->ocury;
+                KL_gotoxy(KL_stdterm, wcurx, wcury);
+                KL_stdterm->flags = TERMINAL_DEFAULT_FLAGS;
                 //Parse the input
                 if(c < '0' || c > '9') {
-                    swrite(stdterm, "Please enter a number.\n");
-                    cread(stdterm);
+                    KL_swrite(KL_stdterm, "Please enter a number.\n");
+                    KL_cread(KL_stdterm);
                     continue;
                 }
-                routine* rtn;
-                if(!(rtn = getRtn(opt, &options))){
-                    swrite(stdterm, "Please enter a correct option.\n");
-                    cread(stdterm);
+                KL_routine* rtn;
+                if(!(rtn = KL_getRtn(opt, &options))){
+                    KL_swrite(KL_stdterm, "Please enter a correct option.\n");
+                    KL_cread(KL_stdterm);
                     continue;
                 }
-                rtn->func();
+                if(rtn->func) {
+                    rtn->func();
+                }else {
+                    continue;
+                }
                 break;
             }
         }
         //Show statistics
         showAll(&brd);
-        flush(stdterm, TERMINAL_OUTPUT);
+        KL_flush(KL_stdterm, TERMINAL_OUTPUT);
         printBoard(&brd);
-        swrite(stdterm, "Game Over\n");
+        KL_swrite(KL_stdterm, "Game Over\n");
         if(win) {
-            swrite(stdterm, "You win! Yay!\n");
+            KL_swrite(KL_stdterm, "You win! Yay!\n");
         }else {
-            swrite(stdterm, "You lose! Hahaha!\n");
+            KL_swrite(KL_stdterm, "You lose! Hahaha!\n");
         }
-        swritef(stdterm, "Time: %ds\n", time(0)-starttime);
-        swrite(stdterm, "Press any key to continue...\n");
-        cread(stdterm);
-        deleteBoard(&brd);
+        KL_swritef(KL_stdterm, "Time: %ds\n", time(0)-starttime);
+        KL_swrite(KL_stdterm, "Press any key to continue...\n");
+        KL_cread(KL_stdterm);
+        destroyBoard(&brd);
     }
+    KL_deinit();
     return 0;
 }

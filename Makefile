@@ -21,10 +21,11 @@ BD=./build
 CC=g++
 CCFLAGS=-Wall -Wno-write-strings -std=c++11 -ggdb -O0 -I.
 LD=$(CC)
+#For linux:
 LDFLAGS=
 LDLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
 #For windows:
-#LDFLAGS=-mwindows
+#LDFLAGS=-pthread -mwindows
 #LDLIBS=-L./karolslib/build/ -lkarolslib -lgdi32
 
 all: clean textsweeper

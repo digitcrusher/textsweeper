@@ -20,7 +20,7 @@
  */
 #include <stdlib.h>
 #include <time.h>
-#include <karolslib/src/terminal.h>
+#include <karolslib/src/window/terminal.h>
 #include "board.h"
 
 V tocheck[] = {{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};
@@ -40,7 +40,7 @@ void createBoard(board* brd, int w, int h, tile null) {
     brd->nulltemp = null;
     *brd->null = brd->nulltemp;
 }
-void deleteBoard(board* brd) {
+void destroyBoard(board* brd) {
     free(brd->map);
     free(brd->null);
 }
@@ -55,44 +55,126 @@ void resetBoard(board* brd, tile with) {
 void generateBoard(board* brd, int mines) {
     brd->mines = mines;
     brd->flags = brd->mines;
-    resetBoard(brd, *brd->null);
+    resetBoard(brd, brd->nulltemp);
     putMines(brd, brd->mines);
     calculateSums(brd);
 }
 void printBoard(board* brd) {
+    int fbefore = KL_stdterm->flags;
+    KL_stdterm->flags = TERMINAL_DEFAULT_FLAGS-(TERMINAL_N_UPDATE*TERMINAL_DEFAULT_FLAGS & TERMINAL_N_UPDATE);
     for(int y=0; y<brd->size.y; y++) {
         for(int x=0; x<brd->size.x; x++) {
             tile* tile = getTile(brd, x, y);
-            if(tile->flagged) {
+            if(tile->flag) {
                 if(tile->wrong) {
-                    cwrite(stdterm, 'R');
+                    KL_cwrite(KL_stdterm, 'R');
                 }else {
-                    cwrite(stdterm, 'P');
+                    KL_cwrite(KL_stdterm, 'P');
                 }
             }else if(!tile->show) {
-                cwrite(stdterm, '#');
+                KL_cwrite(KL_stdterm, '#');
             }else {
                 if(tile->wrong) {
                     if(tile->mine) {
-                        cwrite(stdterm, 'X');
+                        KL_cwrite(KL_stdterm, 'X');
                     }else if(tile->showsum) {
-                        swritef(stdterm, "%d", tile->sum);
+                        KL_swritef(KL_stdterm, "%d", tile->sum);
                     }else {
-                        cwrite(stdterm, '.');
+                        KL_cwrite(KL_stdterm, '.');
                     }
                 }else {
                     if(tile->mine) {
-                        cwrite(stdterm, '*');
+                        KL_cwrite(KL_stdterm, '*');
                     }else if(tile->showsum) {
-                        swritef(stdterm, "%d", tile->sum);
+                        KL_swritef(KL_stdterm, "%d", tile->sum);
                     }else {
-                        cwrite(stdterm, '.');
+                        KL_cwrite(KL_stdterm, '.');
                     }
                 }
             }
         }
-        cwrite(stdterm, '\n');
+        KL_cwrite(KL_stdterm, '\n');
     }
+    KL_stdterm->flags = fbefore;
+}
+void solveBoard(board* brd) {
+    board pbrd;
+    createBoard(&pbrd, brd->size.x, brd->size.y, {0, 1, 1, 0, 0, 0});
+    resetBoard(&pbrd, pbrd.nulltemp);
+    //Calculate possibilities
+    for(int x=0; x<pbrd.size.x; x++) {
+        for(int y=0; y<pbrd.size.y; y++) {
+            for(int i=0; i<(int)(sizeof(tocheck)/sizeof(tocheck[0])); i++) {
+                V p1 = {x+tocheck[i].x, y+tocheck[i].y};
+                tile* t1 = getTile(brd, p1.x, p1.y);
+                if(t1->show) {
+                    int sum=t1->sum;
+                    for(int j=0; j<(int)(sizeof(tocheck)/sizeof(tocheck[0])); j++) {
+                        V p2 = {p1.x+tocheck[j].x, p1.y+tocheck[j].y};
+                        tile* t2 = getTile(brd, p2.x, p2.y);
+                        sum -= t2->flag;
+                    }
+                    getTile(&pbrd, x, y)->sum += sum;
+                    getTile(&pbrd, x, y)->show = !getTile(brd, x, y)->show;
+                }
+            }
+        }
+    }
+    //Copy numbers
+    tile** tiles=(tile**)malloc(sizeof(tile*)*pbrd.size.x*pbrd.size.y);
+    for(int x=0; x<pbrd.size.x; x++) {
+        for(int y=0; y<pbrd.size.y; y++) {
+            tiles[x+y*(int)pbrd.size.x] = getTile(&pbrd, x, y);
+        }
+    }
+    //Sort numbers
+    for(int x=0; x<pbrd.size.x*pbrd.size.y; x++) {
+        for(int y=0; y<pbrd.size.x*pbrd.size.y-1; y++) {
+            if(tiles[y]->sum > tiles[y+1]->sum) {
+                tile* temp = tiles[y+1];
+                tiles[y+1] = tiles[y];
+                tiles[y] = temp;
+            }
+        }
+    }
+    //Flags, show etc.
+    if(tiles[0]->sum < 0) {
+        int i=0;
+        int x=(tiles[i]-pbrd.map)%(int)pbrd.size.x;
+        int y=(tiles[i]-pbrd.map)/(int)pbrd.size.x;
+        for(; !getTile(brd, x, y)->flag; i++) {
+            x = (tiles[i]-pbrd.map)%(int)pbrd.size.x;
+            y = (tiles[i]-pbrd.map)/(int)pbrd.size.x;
+        }
+        if(tiles[i]->sum < 0) {
+            flag(brd, x, y);
+            goto end;
+        }
+    }
+    if(tiles[(int)pbrd.size.x*(int)pbrd.size.y-1]->sum > 0) {
+        int i=pbrd.size.x*pbrd.size.y-1;
+        int x=(tiles[i]-pbrd.map)%(int)pbrd.size.x;
+        int y=(tiles[i]-pbrd.map)/(int)pbrd.size.x;
+        for(; getTile(brd, x, y)->flag || getTile(brd, x, y)->show; i--) {
+            x = (tiles[i]-pbrd.map)%(int)pbrd.size.x;
+            y = (tiles[i]-pbrd.map)/(int)pbrd.size.x;
+        }
+        if(tiles[i]->sum > 0) {
+            flag(brd, x, y);
+            goto end;
+        }
+    }
+    //Didn't find anything so guess a tile
+    for(int x=0; x<pbrd.size.x; x++) {
+        for(int y=0; y<pbrd.size.y; y++) {
+            if(!getTile(brd, x, y)->show) {
+                show(brd, x, y, 0);
+                goto end;
+            }
+        }
+    }
+    end:
+    destroyBoard(&pbrd);
 }
 void putMines(board* brd, int mines) {
     for(int i=0; i<mines; i++) {
@@ -120,7 +202,7 @@ void calculateSums(board* brd) {
                     sum += 1;
                 }
             }
-            if(sum>0) {
+            if(sum > 0) {
                 on->showsum = 1;
             }else {
                 on->showsum = 0;
@@ -133,7 +215,7 @@ void showAll(board* brd) {
     for(int x=0; x<brd->size.x; x++) {
         for(int y=0; y<brd->size.y; y++) {
             tile* to = getTile(brd, x, y);
-            if(to->flagged && !to->mine) {
+            if(to->flag && !to->mine) {
                 to->wrong = 1;
             }
             if(to->show && to->mine) {
@@ -143,9 +225,25 @@ void showAll(board* brd) {
         }
     }
 }
+bool flag(board* brd, int x, int y) {
+    tile* to = getTile(brd, x, y);
+    if(!(brd->flags <= 0) || to->flag) {
+        if(!to->show) {
+           to->flag = !to->flag;
+            if(to->flag) {
+                --brd->flags;
+            }else {
+                ++brd->flags;
+            }
+        }
+    }else {
+        return 1;
+    }
+    return 0;
+}
 bool show(board* brd, int x, int y, bool recursion) {
     tile* on = getTile(brd, x, y);
-    if(on->flagged) {
+    if(on->flag) {
         return 0;
     }
     on->show = 1;

@@ -20,11 +20,11 @@
  */
 #ifndef BOARD_H
 #define BOARD_H
-#include <karolslib/src/math.h>
+#include <karolslib/src/utils/math.h>
 
 struct tile {
     int sum;
-    bool show, showsum, mine, wrong, flagged;
+    bool show, showsum, mine, wrong, flag;
 };
 struct board {
     V size;
@@ -38,13 +38,15 @@ extern V tocheck[];
 
 tile* getTile(board* brd, int x, int y);
 void createBoard(board* brd, int w, int h, tile null);
-void deleteBoard(board* brd);
+void destroyBoard(board* brd);
 void resetBoard(board* brd, tile with);
 void printBoard(board* brd);
+void solveBoard(board* brd);
 void generateBoard(board* brd, int mines);
 void putMines(board* brd, int mines);
 void calculateSums(board* brd);
 void showAll(board* brd);
+bool flag(board* brd, int x, int y);
 bool show(board* brd, int x, int y, bool recursion);
 
 #endif
