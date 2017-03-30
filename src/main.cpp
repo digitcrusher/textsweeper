@@ -88,6 +88,9 @@ void stop() {
     KL_deinit();
     exit(0);
 }
+void termclose(KL_terminal* term) {
+    stop();
+}
 void addOpt(KL_routine opt) {
     KL_addRtn(opt, &options);
 }
@@ -96,6 +99,7 @@ board* getBoard() {
 }
 int main(int argc, char** argv) {
     KL_init();
+    KL_stdterm->close = termclose;
     options = *KL_createModule("options", NULL);
     KL_addRtn(*KL_createRoutine("addOpt", (void (*)())addOpt), KL_getMod("main", KL_stdmodbrd));
     KL_addRtn(*KL_createRoutine("getBoard", (void (*)())getBoard), KL_getMod("main", KL_stdmodbrd));
@@ -230,6 +234,6 @@ int main(int argc, char** argv) {
         KL_cread(KL_stdterm);
         destroyBoard(&brd);
     }
-    KL_deinit();
+    stop();
     return 0;
 }

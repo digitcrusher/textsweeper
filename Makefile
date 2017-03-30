@@ -25,8 +25,8 @@ LD=$(CC)
 LDFLAGS=
 LDLIBS=-L./karolslib/build/ -lkarolslib -L/usr/lib/X11R6/lib -lX11
 #For windows:
-#LDFLAGS=-pthread -mwindows
-#LDLIBS=-L./karolslib/build/ -lkarolslib -lgdi32
+#LDFLAGS=-pthread -mwindows -lgdi32
+#LDLIBS=-L./karolslib/build/ -lkarolslib
 
 all: clean textsweeper
 
